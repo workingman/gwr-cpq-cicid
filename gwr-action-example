@@ -1,0 +1,32 @@
+name: Create Salto Deployment
+
+on:
+  pull_request:
+    types:
+      - merged
+
+jobs:
+  CreateSaltoDeployment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Get branch name and save to env"
+        env:
+          IS_PR: ${{ github.EVENT_NAME == 'pull_request' }}
+        run: |
+          if ${IS_PR}; then
+            BRANCH_NAME="${GITHUB_HEAD_REF}"
+          else
+            BRANCH_NAME="${GITHUB_REF##*/}"
+          fi
+          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
+
+      - name: Install Salto CLI
+        run: |
+          curl https://cli.salto.io/release/1/linux-x64.tar.gz --output linux-x64.tar.gz
+          tar xvzf linux-x64.tar.gz
+
+      - name: Create Salto Deployment
+        run: |
+          ./salto-cloud deployment create from-pull-request -E 13ce49a9-3991-4887-8e55-c9417403d834 --pr-url ${{ github.event.pull_request.html_url }}
+        env: 
+          SALTO_API_TOKEN: ${{ secrets.SALTO_API_TOKEN }}
